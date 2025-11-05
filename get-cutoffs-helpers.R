@@ -2,20 +2,7 @@
 library(tidyverse)
 library(reshape2)
 
-# To be honest about this, we need to specify the number of treatments and controls at each look. When we do the actual t test, we observe one such sequential sample and suspect it comes from a null distribution of a quasi-multivariate T with those degrees of freedom.
-
-K <- 3
-M <- 200000
-nA <- rep(500, K)
-nB <- rep(500, K)
-
-XA <- matrix(rnorm(M * sum(nA), 0, 1), nrow = M)
-XB <- matrix(rnorm(M * sum(nB), 0, 1), nrow = M)
-
-alpha_spend <- rep(0.5 / K, K)
-bracket = c(0.5, 10)
-
-get_t_stats <- function(XA, XB, nA, nB) {
+get_t_stats <- function(XA, XB, nA, nB, M) {
   K = length(nA)
   endsA <- cumsum(nA)
   endsB <- cumsum(nB)
@@ -42,9 +29,7 @@ get_t_stats <- function(XA, XB, nA, nB) {
   T_stats
 }
 
-T_stats = get_t_stats(XA, XB, nA, nB)
-
-get_cuts <- function(tmat, alpha_vec, sides = 1) {
+get_cuts_from_mc <- function(tmat, alpha_vec, sides = 1) {
   K <- ncol(tmat)
   cuts <- numeric(K)
   crossed <- matrix(FALSE, nrow = nrow(tmat), ncol = K)
@@ -66,7 +51,24 @@ get_cuts <- function(tmat, alpha_vec, sides = 1) {
       crossed[, i] <- abs(tmat[, i]) > cuts[i]
     }
   }
-  cuts
+  return
+  list("crossed" = crossed, "cuts" = cuts)
 }
 
-cuts <- get_cuts(T_stats, alpha_spend, sides = 1)
+get_cutoffs <- function(y_obs, w, K, M, alpha_spend) {
+  N <- length(w)
+  cs <- cumsum(w)
+  idx <- seq(N / K, N, by = N / K)
+  nA <- cs[idx]
+  nB <- seq(N / K, N, by = N / K) - nA
+  XA <- matrix(rnorm(M * sum(nA), 0, 1), nrow = M)
+  XB <- matrix(rnorm(M * sum(nB), 0, 1), nrow = M)
+  bracket = c(0.5, 10)
+
+  T_stats <- get_t_stats(XA, XB, nA, nB, M)
+
+  cutoff_stats <- get_cuts_from_mc(T_stats, alpha_spend, sides = 1)
+
+  cuts <- cutoff_stats$cuts
+  return(cuts)
+}
