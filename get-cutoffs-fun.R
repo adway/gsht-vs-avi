@@ -2,7 +2,7 @@ source("get-cutoffs-helpers.R")
 
 sim_fun <- function(N, K, seed) {
   set.seed(seed)
-  M <- 10000
+  M <- 15000
   nA <- rep(N / (2 * K), K)
   nB <- rep(N / (2 * K), K)
 

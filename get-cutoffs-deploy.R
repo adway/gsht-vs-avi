@@ -8,7 +8,7 @@ Ns = c(500, 1000, 5000, 8000, 10000)
 Ks = c(5, 10, 25, 50, 100)
 
 grid <- expand.grid(N = Ns, K = Ks)
-grid <- grid[rep(seq_len(nrow(grid)), each = reps), ]
+# grid <- grid[rep(seq_len(nrow(grid)), each = reps), ]
 grid$seed <- sample.int(1e9, nrow(grid))
 
 print(paste("Total simulations:", nrow(grid)))
