@@ -4,10 +4,10 @@ library(reshape2)
 
 # To be honest about this, we need to specify the number of treatments and controls at each look. When we do the actual t test, we observe one such sequential sample and suspect it comes from a null distribution of a quasi-multivariate T with those degrees of freedom.
 
-K <- 10
+K <- 5
 M <- 15000
-nA <- rep(250, K)
-nB <- rep(250, K)
+nA <- rep(50, K)
+nB <- rep(50, K)
 
 XA <- matrix(rnorm(M * sum(nA), 0, 1), nrow = M)
 XB <- matrix(rnorm(M * sum(nB), 0, 1), nrow = M)
@@ -73,6 +73,33 @@ get_t_stats_memory <- function(nA, nB, M) {
   return(T_stats)
 }
 
+get_ipw_stats_memory <- function(nA, nB, M) {
+  K = length(nA)
+  endsA = cumsum(nA)
+  endsB = cumsum(nB)
+  IPW_stats = matrix(NA, M, K)
+  for (i in 1:M) {
+    XA = rnorm(sum(nA), 0, 1)
+    XB = rnorm(sum(nB), 0, 1)
+
+    for (j in 1:K) {
+      Ai = XA[1:endsA[j]]
+      Bi = XB[1:endsB[j]]
+
+      nAi = endsA[j]
+      nBi = endsB[j]
+
+      mA = sum(Ai) / 0.5
+      mB = sum(Bi) / 0.5
+
+      IPW_stats[i, j] = (mA - mB) / (nAi + nBi)
+    }
+  }
+  return(IPW_stats)
+}
+
+ipw_stats <- get_ipw_stats_memory(nA, nB, M)
+
 T_stats <- get_t_stats(XA, XB, nA, nB, M)
 T_stats <- get_t_stats_memory(nA, nB, M)
 
@@ -120,9 +147,9 @@ check
 
 # See if the cutoffs work for a new draw of null data.
 
-crossed_new = matrix(FALSE, nrow = nrow(T_stats), ncol = K)
+crossed_new = matrix(FALSE, nrow = nrow(ipw_stats), ncol = K)
 for (i in 1:K) {
-  crossed_new[, i] <- abs(T_stats[, i]) > cuts[i]
+  crossed_new[, i] <- abs(ipw_stats[, i]) > cuts[i]
 }
 
 num_rejects = rowSums(crossed_new)

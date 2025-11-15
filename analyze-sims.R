@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggplot2)
 
 files <- list.files(
-  "~/data/gsht-vs-avi",
+  "~/data/gsht-vs-avi/ipw_cutoffs",
   pattern = "\\.RDS$",
   full.names = TRUE
 )
@@ -32,9 +32,9 @@ get_cuts <- function(lookup, N, K) {
   row$cuts[[1]]
 }
 
-saveRDS(lookup, "lookup.RDS")
+saveRDS(lookup, "lookup-ipw.RDS")
 
-get_cuts(lookup, N = 5000, K = 10)
+cuts <- get_cuts(lookup, N = 500, K = 5)
 
 lookup_long <- lookup %>%
   unnest_longer(cuts, indices_to = "look") %>% # each cutoff gets its own row
@@ -48,7 +48,7 @@ ggplot(lookup_long, aes(x = look, y = cutoff, color = factor(N), group = N)) +
     x = "Look (Interim Analysis Step)",
     y = "Cutoff Value",
     color = "N",
-    title = "Sequential Cutoff Boundaries",
+    title = "Sequential Cutoff Boundaries for IPW",
     subtitle = "Subset by K"
   ) +
   theme_minimal(base_size = 14)

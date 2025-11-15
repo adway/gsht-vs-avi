@@ -76,15 +76,10 @@ get_ipw_stats_memory <- function(nA, nB, M) {
       nAi = endsA[j]
       nBi = endsB[j]
 
-      mA = mean(Ai)
-      mB = mean(Bi)
+      mA = sum(Ai) / 0.5
+      mB = sum(Bi) / 0.5
 
-      s2A = sum((Ai - mA)^2) / (nAi - 1)
-      s2B = sum((Bi - mB)^2) / (nBi - 1)
-      sp2 = ((nAi - 1) * s2A + (nBi - 1) * s2B) / (nAi + nBi - 2)
-      se = sqrt(sp2 * (1 / nAi + 1 / nBi))
-
-      IPW_stats[i, j] = (mA - mB) / se
+      IPW_stats[i, j] = (mA - mB) / (nAi + nBi)
     }
   }
   return(IPW_stats)
