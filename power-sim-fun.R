@@ -2,6 +2,7 @@ source("get-cutoffs-helpers.R")
 library(rslurm)
 library(avlm)
 library(DBCS)
+library(LambertW)
 
 get_cuts <- function(lookup, N, K) {
   row <- lookup %>% filter(N == !!N, K == !!K)
@@ -59,6 +60,7 @@ sim_fun <- function(N, K, ATE, seed) {
       avT_pvals[i] <- 1
     }
   }
+
   avT_stop <- if (any(avT_pvals < 0.05)) which(avT_pvals < 0.05)[1] else 0
 
   # GROUP SEQUENTIAL IPW TEST
@@ -81,10 +83,34 @@ sim_fun <- function(N, K, ATE, seed) {
   # ANYTIME VALID IPW TEST
 
   df <- data.frame(w, y_obs)
-  CS <- DB_CS(df, treatment = "w", response = "y_obs")
-  ipw_cross <- !(CS$lower <= 0 & CS$upper >= 0)
+  CS <- DB_CS(df, treatment = "w", response = "y_obs", t_opt = 10)
+  CS_100 <- DB_CS(df, treatment = "w", response = "y_obs", t_opt = 100)
+  CS_1000 <- DB_CS(df, treatment = "w", response = "y_obs", t_opt = 1000)
 
-  avIPW_stop <- if (any(ipw_cross)) which(ipw_cross)[1] else 0
+  tau_hat <- y_obs / 0.5 * (-1)^(1 - w)
+  center <- cumsum(tau_hat) / seq_along(tau_hat)
+
+  sig2_hat = (0.5 * y_obs + 0.5 * y_obs)^2 / 0.5^2
+  Sn = cumsum(sig2_hat)
+  eta = sqrt((-lamW::lambertWm1(-0.05^2 * exp(1)) - 1) / 10)
+  width = 1 /
+    (1:nrow(df)) *
+    sqrt(((Sn * eta^2 + 1) / eta^2) * log((Sn * eta^2 + 1) / 0.05^2))
+
+  lower = center - width
+  upper = center + width
+
+  ipw_cross <- !(lower <= 0 & upper >= 0)
+  avIPW_stop_exact <- if (any(ipw_cross)) which(ipw_cross)[1] else 0
+
+  ipw_cross <- !(CS$lower <= 0 & CS$upper >= 0)
+  avIPW_stop_10 <- if (any(ipw_cross)) which(ipw_cross)[1] else 0
+
+  ipw_cross <- !(CS_100$lower <= 0 & CS_100$upper >= 0)
+  avIPW_stop_100 <- if (any(ipw_cross)) which(ipw_cross)[1] else 0
+
+  ipw_cross <- !(CS_1000$lower <= 0 & CS_1000$upper >= 0)
+  avIPW_stop_1000 <- if (any(ipw_cross)) which(ipw_cross)[1] else 0
 
   return(
     list(
@@ -94,7 +120,12 @@ sim_fun <- function(N, K, ATE, seed) {
       gst_star_t = gstT_stop,
       avi_star_t = avT_stop,
       gst_star_ipw = gstIPW_stop,
-      avi_star_ipw = avIPW_stop,
+      avi_star_ipw = c(
+        avIPW_stop_exact,
+        avIPW_stop_10,
+        avIPW_stop_100,
+        avIPW_stop_1000
+      ),
       cuts_t = gstT_cuts,
       cuts_ipw = gstIPW_cuts,
       t_stats = gstT_stats,

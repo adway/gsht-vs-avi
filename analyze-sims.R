@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggplot2)
 
 files <- list.files(
-  "~/data/gsht-vs-avi/ipw_cutoffs",
+  "~/data/gsht-vs-avi/power_diffeta",
   pattern = "\\.RDS$",
   full.names = TRUE
 )
@@ -57,7 +57,7 @@ ggplot(lookup_long, aes(x = look, y = cutoff, color = factor(N), group = N)) +
 
 ##### ATE RESULTS
 result_files <- list.files(
-  "~/data/gsht-vs-avi/power",
+  "~/data/gsht-vs-avi/power_diffeta",
   pattern = "\\.RDS$",
   full.names = TRUE
 )
@@ -93,7 +93,7 @@ sim_results <- map_dfr(result_files, function(f) {
       K = x$K,
       ATE = x$ATE,
       t_star = x$gst_star_ipw,
-      n_star = x$avi_star_ipw,
+      n_star = x$avi_star_ipw[2],
       t_stats = list(x$ipw_stats),
       t_cuts = list(x$cuts_ipw), # store vector in list-column
       file = basename(f) # optional traceability
@@ -101,7 +101,7 @@ sim_results <- map_dfr(result_files, function(f) {
   })
 })
 
-sim_results <- sim_results[sim_results$N != 20000, ]
+# sim_results <- sim_results[sim_results$N != 20000, ]
 
 sim_results$t_stop <- if_else(
   sim_results$t_star == 0,
@@ -201,8 +201,8 @@ ggplot() +
     x = "Total Sample Size (N)",
     y = "Power",
     color = "K",
-    title = "Mean Power by Avg. Stopping time of GSHT",
-    subtitle = "IPW Test"
+    title = "Mean Power by Avg. Stopping Time of GSHT",
+    subtitle = expression("T-Test")
   ) +
   theme_minimal()
 
