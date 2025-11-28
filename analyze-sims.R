@@ -57,7 +57,7 @@ ggplot(lookup_long, aes(x = look, y = cutoff, color = factor(N), group = N)) +
 
 ##### ATE RESULTS
 result_files <- list.files(
-  "~/data/gsht-vs-avi/power_diffeta",
+  "~/data/gsht-vs-avi/power_t_IPW_diffeta",
   pattern = "\\.RDS$",
   full.names = TRUE
 )
@@ -184,7 +184,7 @@ ggplot() +
     data = power_summary,
     aes(
       x = N,
-      y = mean_power_gsht_t,
+      y = mean_stop_gsht_nscale,
       color = as.factor(K),
       group = K
     )
@@ -192,7 +192,7 @@ ggplot() +
   #  --- TEST 2 (averaged over K)
   geom_line(
     data = average_avi,
-    aes(x = N, y = mean_power_avi_t),
+    aes(x = N, y = mean_stop_avi),
     linewidth = 1.2,
     color = "black"
   ) +

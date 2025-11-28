@@ -90,7 +90,7 @@ sim_fun <- function(N, K, ATE, seed) {
   tau_hat <- y_obs / 0.5 * (-1)^(1 - w)
   center <- cumsum(tau_hat) / seq_along(tau_hat)
 
-  sig2_hat = (0.5 * y_obs + 0.5 * y_obs)^2 / 0.5^2
+  sig2_hat = (0.5 * y_1 + 0.5 * y_0)^2 / 0.5^2 # this code is wrong, need y_1 and y_0.
   Sn = cumsum(sig2_hat)
   eta = sqrt((-lamW::lambertWm1(-0.05^2 * exp(1)) - 1) / 10)
   width = 1 /
