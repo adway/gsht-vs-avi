@@ -93,7 +93,7 @@ sim_results <- map_dfr(result_files, function(f) {
       K = x$K,
       ATE = x$ATE,
       t_star = x$gst_star_ipw,
-      n_star = x$avi_star_ipw[2],
+      n_star = x$avi_star_ipw[4],
       t_stats = list(x$ipw_stats),
       t_cuts = list(x$cuts_ipw), # store vector in list-column
       file = basename(f) # optional traceability
@@ -132,7 +132,7 @@ sim_results_joined <- sim_results %>%
   left_join(sim_results_summary, by = c("N", "ATE", "K"))
 
 sim_results_joined$power_gsht_t <- if_else(
-  sim_results_joined$t_stop <= sim_results_joined$mean_stop_gsht,
+  sim_results_joined$t_stop <= 0.5 * sim_results_joined$K,
   1,
   0
 )
@@ -144,7 +144,7 @@ sim_results_joined <- sim_results_joined %>%
 #   mutate(n_stop_t_scale_ipw = n_ipw_stop / (N / K))
 
 sim_results_joined$power_avi_t <- if_else(
-  sim_results_joined$n_stop <= sim_results_joined$t_stop_n_scale,
+  sim_results_joined$n_stop <= 0.5 * sim_results_joined$N,
   1,
   0
 )
@@ -199,10 +199,10 @@ ggplot() +
   facet_wrap(~ATE, scales = "free_y") +
   labs(
     x = "Total Sample Size (N)",
-    y = "Power",
+    y = "Stopping Time",
     color = "K",
-    title = "Mean Power by Avg. Stopping Time of GSHT",
-    subtitle = expression("T-Test")
+    title = "Mean Stopping Time",
+    subtitle = "T-test" # expression("IPW Test — " * t[opt] == 1000 * " (Approximate)")
   ) +
   theme_minimal()
 
